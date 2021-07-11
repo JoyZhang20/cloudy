@@ -4,12 +4,12 @@
       <el-row>
         <el-col :span="6" :offset="16">
           <el-input
-            v-model="clipContent"
+            v-model="sendRecordContent"
             placeholder="输入要同步的记录"
           ></el-input
         ></el-col>
         <el-col :span="2">
-          <el-button type="primary" @click="sendClipContent"
+          <el-button type="primary" @click="sendClipRecord"
             >发送</el-button
           ></el-col
         >
@@ -18,7 +18,7 @@
         <el-col :span="24">
           <el-table
             :data="
-              tableData.slice(
+              recordTable.slice(
                 (currentPage - 1) * pageSize,
                 currentPage * pageSize
               )
@@ -26,6 +26,7 @@
             style="width: 100%"
             :default-sort="{ prop: 'id', order: 'descending' }"
           >
+
             <el-table-column
               label="id"
               width="180"
@@ -41,8 +42,7 @@
               label="内容"
               :show-overflow-tooltip="true"
               align="left"
-              header-align="center"
-              sortable
+              header-align="center"             
             >
               <template slot-scope="scope">
                 <span>{{ scope.row.content }}</span>
@@ -51,7 +51,7 @@
             <el-table-column label="操作" width="180" align="center">
               <template slot-scope="scope">
                 <el-button
-                  @click="handleCopy(scope.row)"
+                  @click="copyRecord(scope.row)"
                   type="primary"
                   size="mini"
                   icon="el-icon-document"
@@ -60,7 +60,7 @@
                   size="mini"
                   type="danger"
                   icon="el-icon-delete"
-                  @click="handleDelete(scope.row)"
+                  @click="deleteRecord(scope.row)"
                 ></el-button>
               </template>
             </el-table-column>
@@ -74,7 +74,7 @@
               :page-sizes="[1, 5, 10, 20]"
               :page-size="pageSize"
               layout="total, sizes, prev, pager, next, jumper"
-              :total="tableData.length"
+              :total="recordTable.length"
             >
             </el-pagination></div
         ></el-col>
@@ -84,29 +84,27 @@
 </template>
 
 <script>
-import axios from "axios";
 export default {
-  name: "base1",
   data() {
     return {
-      clipContent: "",
-      tableData: [
+      sendRecordContent: "",
+      recordTable: [
         {
           clipRecordId: 1,
           content: "Joy",
         },
       ],
-      currentPage: 1, // 当前页码
-      total: 20, // 总条数
-      pageSize: 10, // 每页的数据条数
+      currentPage: 1,
+      total: 20,
+      pageSize: 10,
     };
   },
   methods: {
-    sendClipContent() {
-      axios
-        .post("http://localhost:8084/clip-record/add", {
+    sendClipRecord() {
+      this.$http
+        .post("/clip-record/add", {
           ownerPhoneNumber: this.$route.params.phoneNumber,
-          content: this.clipContent,
+          content: this.sendRecordContent,
         })
         .then(
           (response) => (
@@ -114,7 +112,8 @@ export default {
               message: "添加成功！",
               type: "success",
             }),
-            (this.clipContent = "")
+            (this.sendRecordContent = ""),
+            this.$options.methods.freshPage(this)
           )
         )
         .catch(function (error) {
@@ -124,39 +123,41 @@ export default {
           });
         });
     },
-
     copyString(copyString) {
       var oInput = document.createElement("input");
       oInput.value = copyString;
       document.body.appendChild(oInput);
-      oInput.select(); // 选择对象
-      document.execCommand("Copy"); // 执行浏览器复制命令
+      oInput.select();
+      document.execCommand("Copy");
       oInput.className = "oInput";
       oInput.style.display = "none";
     },
-    handleCopy(row) {
+    copyRecord(row) {
       this.copyString(row.content);
       this.$message({
         message: "复制成功",
         type: "success",
       });
     },
-    handleDelete(row) {
+    deleteRecord(row) {
       this.$confirm("删除该记录?", "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
       })
         .then(() => {
-          axios
-            .post("http://localhost:8084/clip-record/delete", {
+          this.$http
+            .post("/clip-record/delete", {
               clipRecordId: row.clipRecordId,
             })
-            .then((response) =>
-              this.$message({
-                message: "删除成功！",
-                type: "success",
-              })
+            .then(
+              (response) => (
+                this.$message({
+                  message: "删除成功！",
+                  type: "success",
+                }),
+                this.$options.methods.freshPage(this)
+              )
             )
             .catch(function (error) {
               this.$message({
@@ -167,26 +168,34 @@ export default {
             });
         })
         .catch(() => {});
-    }, //每页条数改变时触发 选择一页显示多少行
+    },
     handleSizeChange(val) {
       console.log(`每页 ${val} 条`);
       this.currentPage = 1;
       this.pageSize = val;
     },
-    //当前页改变时触发 跳转其他页
     handleCurrentChange(val) {
       console.log(`当前页: ${val}`);
       this.currentPage = val;
     },
+    freshPage(vue) {
+      vue.$http
+        .post("/clip-record/find", {
+          phoneNumber: vue.$route.params.phoneNumber,
+        })
+        .then((response) => (vue.recordTable = response.data.mes))
+        .catch(function (error) {
+          console.log("连接失败！！！");
+        });
+    },
   },
   mounted() {
-    axios
-      .post("http://localhost:8084/clip-record/find", {
+    this.$http
+      .post("/clip-record/find", {
         phoneNumber: this.$route.params.phoneNumber,
       })
-      .then((response) => (this.tableData = response.data.mes))
+      .then((response) => (this.recordTable = response.data.mes))
       .catch(function (error) {
-        // 请求失败处理
         console.log("连接失败！！！");
       });
   },

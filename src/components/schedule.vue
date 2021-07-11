@@ -1,7 +1,7 @@
-<template>
-  <el-container>
-    <el-main>
-      <el-container class="schedule-list">
+<template >
+  <el-container >
+    <el-main style="padding:0px">
+      <el-container  class="schedule-list">
         <el-main>
           <el-row>
             <el-col :span="12" style="text-align: left">
@@ -13,8 +13,8 @@
                   <i class="el-icon-more"  style="font-size:20px"></i>
                 </span>
                 <el-dropdown-menu slot="dropdown">
-                  <el-dropdown-item @click.native="switchShowDateMode()">{{showDateModes[showSeq]}}</el-dropdown-item>
-                  <el-dropdown-item @click.native="changeRecordMode()">{{
+                  <el-dropdown-item @click.native="switchShowDateMode()">{{showDateModes[showScheduleDateSeq]}}</el-dropdown-item>
+                  <el-dropdown-item @click.native="switchRecordMode()">{{
                     showScheduleModes[showScheduleModeseq]
                   }}</el-dropdown-item>
                 </el-dropdown-menu>
@@ -22,22 +22,20 @@
             </el-col>
           </el-row>
           <el-row>
-            <el-col :span="15">
-              <el-input placeholder="输入日程的内容" v-model="addRecordContent">
+            <el-col :span="13">
+              <el-input placeholder="输入日程的内容" v-model="sendRecordForm.addRecordContent">
               </el-input
             ></el-col>
-            <el-col :span="7">
+            <el-col  :span="11">   
               <el-date-picker
-                v-model="addRecordTime"
+                v-model="sendRecordForm.addRecordTime"
                 type="datetime"
                 placeholder="选择日期时间"
                 align="right"
                 :formatter="dateFormat"
+                style="float:left"
               >
-              </el-date-picker>
-            </el-col>
-            <el-col :span="2">
-              <el-button type="primary" @click="sendContent"><i class="el-icon-s-promotion"></i></el-button>
+              </el-date-picker> <el-button type="primary" @click="sendContent" style="float:left">发送</el-button>
             </el-col>
           </el-row>
           <el-row
@@ -66,7 +64,7 @@
             </el-col>
             <el-col :span="6">
               <span style="text-color: blue">{{
-                showSeq==1?scheduleRecord.scheduleTime:scheduleRecord.remainTime
+                showScheduleDateSeq==1?scheduleRecord.scheduleTime:scheduleRecord.remainTime
               }}</span>
             </el-col>
             <el-col :span="1">
@@ -89,26 +87,21 @@
               </el-dropdown>
             </el-col>
           </el-row>
-          <!-- <el-row>
-            <el-col :span="24">
-              <hr />
-            </el-col>
-          </el-row> -->
           <el-dialog
             title="编辑日程"
             :visible.sync="dialogFormVisible"
             width="25%"
           >
-            <el-form :model="updateForm">
+            <el-form :model="updateRecordForm">
               <el-form-item label="日程内容" :label-width="formLabelWidth">
                 <el-input
-                  v-model="updateForm.content"
+                  v-model="updateRecordForm.content"
                   autocomplete="off"
                 ></el-input>
               </el-form-item>
               <el-form-item label="日程时间" :label-width="formLabelWidth">
                 <el-date-picker
-                  v-model="updateForm.scheduleTime"
+                  v-model="updateRecordForm.scheduleTime"
                   type="datetime"
                   placeholder="选择日期时间"
                   align="right"
@@ -129,7 +122,7 @@
       <el-container class="schedule-calendar" direction="vertical">
         <el-row>
           <el-col :span="24"
-        <el-calendar v-if="isFresh" v-model="selectedDay">
+        <el-calendar v-model="selectedDay">
           <template slot="dateCell" slot-scope="{ date, data }">
             <p :class="data.isSelected ? 'is-selected' : ''">
               {{ data.day.split("-").slice(2).join("-") }}
@@ -144,27 +137,19 @@
           <el-col :span="24"><p>{{item}}</p><hr/>
           </el-col>
         </el-row>
-        <!-- <el-row>
-            <el-col :span="24"><p>计算机网络考试</p><hr/>
-            </el-col>
-        </el-row> -->
       </el-container>
       </el-main>
   </el-container>
 </template>
 
 <script>
-import axios from "axios";
 export default {
-  name: "schedule",
   data() {
     return {
       selectedDay: "",
       calendarMap: {},
-      dialogTableVisible: false,
       dialogFormVisible: false,
-      isFresh: false,
-      updateForm: {
+      updateRecordForm: {
         scheduleRecordId: "",
         content: "",
         scheduleTime: "",
@@ -172,29 +157,28 @@ export default {
       formLabelWidth: "80px",
       showScheduleModeseq: 0,
       showScheduleModes: ["显示全部日程", "仅显示未完成日程"],
-      showSeq: 0,
-      showDateModes: ["日期完整显示", "日期倒数显示"],
+      showScheduleDateSeq: 0,
+      showDateModes: ["时间完整显示", "时间倒数显示"],
       calendarValue: new Date(),
-      addRecordTime: "",
-      addRecordContent: "",
+      sendRecordForm: {
+        addRecordTime: "",
+        addRecordContent: "",
+      },
       scheduleRecords: [],
-      currentPage: 1, // 当前页码
-      total: 20, // 总条数
-      pageSize: 10, // 每页的数据条数
     };
   },
   methods: {
     changeForm(day) {
+      //传入某一天的日期，查询calendarMap，如果有对应的日程，即返回这个日程的缩写
       var res = "";
       try {
-        // res ="/"+ this.calendarMap[day][0].slice(0,10)+"...等"+this.calendarMap[day].length+"个日程";
         res = "/" + this.calendarMap[day][0].slice(0, 10) + "...等";
       } catch (e) {}
 
       return res;
     },
     getSelectedList() {
-      //  console.log(this.selectedDay);
+      //根据this.selectedDay找到calendarMap中对应的日程列表，需要先对时间格式进行转换
       var list = ["计算机网络考试", "软件工程考试"];
       var str = "";
       var date = new Date(this.selectedDay);
@@ -207,51 +191,48 @@ export default {
         str += "0";
       }
       str += date.getDate();
-
-      // console.log(str);
       try {
         list = this.calendarMap[str];
       } catch (e) {}
-      // console.log(list);
       return list;
     },
 
     getCalendarMap(vue, scheduleRecords) {
-      // var day=scheduleRecords[i].scheduleTime.split(" ").slice(0, 1)[0];
-      var map = new Map();
+      //获取CalendarMap：遍历每个未完成的日程，将每个日程的日期和内容进行映射，
+      vue.calendarMap = {}; //这里的value应当是一个list，日期相同即为list新增一个元素
       for (var i = 0; i < scheduleRecords.length; i++) {
-        // console.log(scheduleRecords[i]);
         if (scheduleRecords[i].finished == false) {
           var list = new Array();
           if (
-            map.get(
+            //如果之前已经有了这个日期的键值，则在原有的list上进行添加元素
+            vue.calendarMap[
               scheduleRecords[i].scheduleTime.split(" ").slice(0, 1)[0]
-            ) != null
+            ] != null
           ) {
             list = list.concat(
-              map.get(scheduleRecords[i].scheduleTime.split(" ").slice(0, 1)[0])
+              vue.calendarMap[
+                scheduleRecords[i].scheduleTime.split(" ").slice(0, 1)[0]
+              ]
             );
           }
           list.push(scheduleRecords[i].content);
-          map.set(
+          vue.$set(
+            vue.calendarMap,
             scheduleRecords[i].scheduleTime.split(" ").slice(0, 1)[0],
             list
           );
         }
-
-        for (var [key, value] of map) {
-          vue.$set(vue.calendarMap, key, value);
-        }
       }
     },
 
-    changeRecordMode() {
+    switchRecordMode() {
+      //切换是/否显示已完成的日程
       this.showScheduleModeseq = (this.showScheduleModeseq + 1) % 2;
     },
     switchShowDateMode() {
-      this.showSeq = (this.showSeq + 1) % 2;
+      //切换显示倒数日/完整日期
+      this.showScheduleDateSeq = (this.showScheduleDateSeq + 1) % 2;
     },
-
     deleteRecord(id) {
       this.$confirm("删除该日程?", "提示", {
         confirmButtonText: "确定",
@@ -259,15 +240,18 @@ export default {
         type: "warning",
       })
         .then(() => {
-          axios
-            .post("http://localhost:8084/schedule-record/delete", {
+          this.$http
+            .post("/schedule-record/delete", {
               scheduleRecordId: id,
             })
-            .then((response) =>
-              this.$message({
-                message: "删除成功！",
-                type: "success",
-              })
+            .then(
+              (response) => (
+                this.$message({
+                  message: "删除成功！",
+                  type: "success",
+                }),
+                this.$options.methods.freshPage(this)
+              )
             )
             .catch(function (error) {
               this.$message({
@@ -280,33 +264,37 @@ export default {
         .catch(() => {});
     },
     openUpdateDialog(scheduleRecord) {
+      //打开用于更新日程内容的对话框，并将对应的日程内容显示在对话框里
       this.dialogFormVisible = true;
-      this.updateForm.scheduleRecordId = scheduleRecord.scheduleRecordId;
-      this.updateForm.content = scheduleRecord.content;
-      this.updateForm.scheduleTime = scheduleRecord.scheduleTime;
+      this.updateRecordForm.scheduleRecordId = scheduleRecord.scheduleRecordId;
+      this.updateRecordForm.content = scheduleRecord.content;
+      this.updateRecordForm.scheduleTime = scheduleRecord.scheduleTime;
     },
     updateRecord() {
       this.dialogFormVisible = false;
-      axios
-        .post("http://localhost:8084/schedule-record/update", {
-          scheduleRecordId: this.updateForm.scheduleRecordId,
-          content: this.updateForm.content,
-          scheduleTime: this.updateForm.scheduleTime,
+      this.$http
+        .post("/schedule-record/update", {
+          scheduleRecordId: this.updateRecordForm.scheduleRecordId,
+          content: this.updateRecordForm.content,
+          scheduleTime: this.updateRecordForm.scheduleTime,
         })
-        .then((response) =>
-          this.$message({
-            message: "修改成功！",
-            type: "success",
-          })
+        .then(
+          (response) => (
+            this.$message({
+              message: "修改成功！",
+              type: "success",
+            }),
+            this.$options.methods.freshPage(this)
+          )
         )
         .catch(function (error) {});
     },
     sendContent() {
-      axios
-        .post("http://localhost:8084/schedule-record/add", {
+      this.$http
+        .post("/schedule-record/add", {
           ownerPhoneNumber: this.$route.params.phoneNumber,
-          content: this.addRecordContent,
-          scheduleTime: this.dateFormat(this.addRecordTime),
+          content: this.sendRecordForm.addRecordContent,
+          scheduleTime: this.dateFormat(this.sendRecordForm.addRecordTime),
         })
         .then(
           (response) => (
@@ -314,14 +302,15 @@ export default {
               message: "添加成功！",
               type: "success",
             }),
-            (this.addRecordContent = ""),
-            (this.addRecordTime = "")
+            (this.sendRecordForm = {}),
+            this.$options.methods.freshPage(this)
           )
         )
         .catch(function (error) {});
     },
     dateFormat(row) {
-      var date = row; //时间戳为10位需*1000，时间戳为13位的话不需乘1000
+      //用于发送日程中时间选择器的格式
+      var date = row;
       var Y = date.getFullYear() + "-";
       var M =
         (date.getMonth() + 1 < 10
@@ -334,11 +323,12 @@ export default {
       return Y + M + D + h + m + s;
     },
     updateIsFinished(event, id, isFinished) {
-      if (event.target.tagName == "SPAN") return;
+      //通过复选框来更新是否完成
+      if (event.target.tagName == "SPAN") return; //防止产生多次点击
       this.cx++;
       isFinished = !isFinished;
-      axios
-        .post("http://localhost:8084/schedule-record/update-finished", {
+      this.$http
+        .post("/schedule-record/update-finished", {
           scheduleRecordId: id,
           finished: isFinished,
         })
@@ -350,31 +340,34 @@ export default {
         )
         .catch(function (error) {});
     },
+    freshPage(vue) {
+      vue.$http
+        .post("/schedule-record/find", {
+          phoneNumber: vue.$route.params.phoneNumber,
+        })
+        .then(
+          (response) => (
+            (vue.scheduleRecords = response.data.mes),
+            vue.$options.methods.getCalendarMap(vue, response.data.mes)
+          )
+        )
+        .catch(function (error) {});
+    },
   },
   mounted() {
-    // this.$set(this.calendarMap, "min", "王薏敏");
-    // var sdk = "2021-07-10";
-    // console.log(this.calendarMap[sdk]);
-
-    axios
-      .post("http://localhost:8084/schedule-record/find", {
+    this.$http
+      .post("/schedule-record/find", {
         phoneNumber: this.$route.params.phoneNumber,
       })
       .then(
         (response) => (
           (this.scheduleRecords = response.data.mes),
-          this.$options.methods.getCalendarMap(this, response.data.mes),
-          // map.forEach(function (key, value) {
-          //   this.$set(this.calendarMap, key, value);
-          // }),
-          (this.isFresh = true)
+          this.$options.methods.getCalendarMap(this, response.data.mes)
         )
       )
       .catch(function (error) {
-        // 请求失败处理
         console.log("mounted连接失败！！！");
       });
-    // console.log("111");
   },
 };
 </script>
@@ -389,13 +382,14 @@ export default {
   border-radius: 4px;
 }
 
-.isfinished{
+.isfinished {
   color: red;
 }
 .schedule-list {
-  background-color: rgb(221, 241, 241);
+  background-color: rgb(221, 245, 241);
   height: 100%;
   width: 50%;
+  left: 0px;
   float: left;
 }
 .schedule-calendar {

@@ -1,19 +1,22 @@
 <template>
   <el-container class="register-form">
     <el-main>
-      <h3>用户注册</h3>
+      <el-row>
+        <el-col :span="2" style="margin-top:23px"><i class="el-icon-back" style="font-size:20px" @click="goLogin"></i></el-col>
+        <el-col :span="6" :offset="6"> <h3>用户注册</h3></el-col>
+      </el-row>    
       <hr style="width:100%" />
-      <el-form ref="form" :model="form">
+      <el-form ref="form" :model="registerForm">
         <el-form-item style="margin-top: 15%">
           <el-input
-            v-model="form.phoneNumber"
+            v-model="registerForm.phoneNumber"
             placeholder="手机号"
             style="width: 80%"
           ></el-input>
         </el-form-item>
         <el-form-item>
           <el-input
-            v-model="form.password"
+            v-model="registerForm.password"
             placeholder="密码"
             type="password"
             style="width: 80%"
@@ -21,7 +24,7 @@
         </el-form-item>
         <el-form-item>
           <el-input
-            v-model="form.checkPassword"
+            v-model="registerForm.checkPassword"
             placeholder="确认密码"
             type="password"
             style="width: 80%"
@@ -40,11 +43,10 @@
   >
 </template>
 <script>
-import axios from "axios";
 export default {
   data() {
     return {
-      form: {
+      registerForm: {
         phoneNumber: "",
         password: "",
         checkPassword: "",
@@ -53,18 +55,36 @@ export default {
   },
   methods: {
     onSubmit() {
-      axios
-        .post("http://localhost:8084/user/add", {
-          phoneNumber: this.form.phoneNumber, // 参数 firstName
-          password: this.form.password, // 参数 lastName
+      this.$http.post("/user/add", {
+         phoneNumber: this.registerForm.phoneNumber, 
+          password: this.registerForm.password, 
         })
-        .then(function (response) {
-          console.log(response);
+        .then((response) => {
+          if (response.data.code == 200) {
+           this.$router.push("/start/login");
+            this.$message({
+              message: "注册成功，欢迎登录！",
+              type: "success",
+            });
+          } else {
+            this.$message.error({
+              message: "此手机号已被注册，请登录！",
+            });
+            this.fregisterFormorm={}
+          }
         })
-        .catch(function (error) {
+        .catch((error) => {
+          this.$message({
+            message: "连接超时~",
+            type: "warning",
+          });
           console.log(error);
         });
+
     },
+    goLogin(){
+      this.$router.push("/start/login")
+    }
   },
 };
 </script>

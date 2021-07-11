@@ -14,11 +14,12 @@ export default {
 };
 </script>
 
-<style>
+<style >
 html,
 body,
 #app {
    margin: 0px;
+   margin-top:7px;
    padding: 0px;
   height: 90%;
   background-color: #92baff;

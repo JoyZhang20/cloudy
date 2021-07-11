@@ -1,33 +1,11 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import page1 from '@/components/home-clip'
-import page2 from '@/components/home-schedule'
-import login from "@/components/login";
-import register from "@/components/register";
-import homeClip from "@/components/home-clip";
-import homeSchedule from "@/components/home-schedule";
 Vue.use(Router)
-
-
-
-
-
 const router = new Router({
     base: '/cloudy/',
     routes: [{
             path: '/',
             redirect: "/start/login",
-        },
-
-        {
-            path: '/page2',
-            name: 'page2',
-            component: page2
-        },
-        {
-            path: '/start',
-            component: () =>
-                import ("@/components/start.vue"),
         },
         {
             path: '/start',
